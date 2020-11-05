@@ -1,0 +1,78 @@
+---
+2020/09/05
+
+Definimos um modelo que funcionara' em 2 passos, um preparatorio (a ser implementado em Python) e um iMA:
+
+ 1. Administrativo: fora do Moodle, para inserir a imagens gigantes.
+
+    A ideia basica daqui e' ter varias representacoes da imagem original, em niveis de resolucao, sendo que
+    a resolucao da imagem no nivel k e' metade daquela do nivel k+1.
+    Se juntar todas as imagens de determinado nivel, teremos a imagem completa, como num mosaico (mas com variado nivel de resolucao).
+    
+    Entao precisaremos fazer alguns codigos para quebrar as imagens, registrando varias camadas
+ em forma de arvore binaria: uma imagem de nivel k, no nivel k+1 origina 4 outras
+ (cada uma com o "dobro" do tamanho, tanto em linhas qto em colunas, da imagem de nivel anterior).
+ Assim, cada imagem original (gigante) resultara' um log(N) niveis de imagens (se N for o nivel da arvore), todas
+ elas serao arquivadas em um servidor que o Moodle tera' acesso, usando o mecanismo
+ de seguranca do Moodle (ninguem tera' acesso `as imagens diretamente).
+
+ 2. Gerenciamento: via Moodle.
+
+    Aqui estao os recursos internos ao Moodle, o professor associa uma tarefa a
+    alguma das imagens cadastradas no passo 1 e faz as marcacoes das regioes que
+ correspondem a uma resposta correta (digamos marcou retangulos r1, r2, ... rk).
+ O aluno entra na atividade, recebe a imagem em sua menor resolucao (nivel 0 da
+ arvore) e navega pela imagem (pode ampliar, reduzir e mover). Nos locais que
+ imagina ter encontrado os objetos desejamos, pegar o marcador de regiao e a marca.
+ Quando finalizar as marcacoes, clica no botao de enviar.
+ O servidor (Moodle) recebe um arquivo texto com as marcas do aluno e o registra.
+ O professor pode depois entrar no ambiente e ver quais alunos enviou atividade,
+ se acertou ou errou e, se desejar, entrar na resposta de determinado aluno.
+
+
+1. Mais detalhes do processamento separado para gerar os diretorios com a arvore de cada imagem.
+   Isso poderia ser feito por um programa implementado em Python.
+   Precisa ser rodado em uma maquina potentente, para cada imagem gerara um grande numero de imagens menores, em forma hierarquica.
+   A imagem do nivel 0 sera' a de menor resolucao (talvez 5Mb, digamos com 4000 x 3000 pixels). No diretorio: 0/
+   As 4 imagens de nivel 1, cada uma tera' a mesma resolucao da imagem nivel 0. Nos diretorios: 0/0/;  0/1/;  0/2/;  0/3/
+   As 4^2 imagens de nivel 2, cada com mesma resolucao 4000x3000.  Nos diretorios: 0/0/0 - 0/0/3; 0/1/0 - 0/1/3; 0/2/0 - 0/2/3; 0/3/0 - 0/3/3
+   As 4^k imagens de nivel k, cada 4000x3000. Cada diretorio do nivel k-1 dara' origem a outros 4: x/y/...z/0; x/y/...z/1; x/y/...z/2; x/y/...z/3
+
+   A geracao das imagens e' feita em ordem inversa (partindo da imagem gigante) e gerando as imagens menores.
+  Assim e' preciso calcular o valor do nivel maximo k de tal forma que a imagem original dividida por 2^k gere uma imagem com 4000 linhas (ou 3000 colunas).
+  Para simplificar, vamos supor que a imagem original ja' esteja na escala 4 x 3.
+  Denotemos a Wi = 4000 (e Hi = 3000)
+
+  1.1 Achar o valor de k
+      Seja W x H o tamanho a imagem original
+      Qual natural k que gera W/2^k = Wi => 2^k = W/Wi (e aplicando log na base 2) => k*log(2) = log(2^k) = log(W/Wi) = log(W)-log(Wi)
+      Lembrando que para log na base 2: log(x) = y <=> 2^y = x (1)
+      Acima usamos que log(v^p)=p*log(v) e agora usando que log da divisao = subtracao dos logs, obtemos que
+
+            k = log(W) - log(Wi)   (2)
+
+  1.2 Gerar as imagens
+      - nivel k: dividir a imagem original em 2*2^k imagens, cada uma de tamanho Wi x Hi (dividir por 2 em largura e por 2 em altura)
+                 pois 2^k * Wi = 2^(log(W) - log(Wi)) * Wi = (2^log(W) / 2^log(Wi)) * Wi  (3)
+                 e usando a relacao (1), supondo que xw=log(W) e xwi=log(Wi) entao: 2^xw = W e 2^xwi = Wi, assim podemos re-escrevemos (3) como
+                 2^k * Wi = (2^log(W) / 2^log(Wi)) * Wi = (2^xw / 2^xwi) * Wi = (W / Wi) * Wi = W  c.q.d.
+      - nivel k-1: para cada 4 imagens vizinhas, 2 imagens por coluna e as 2 imagens linha, serao juntadas gerando uma imagem de metada da resolucao original
+                   ou seja, como cada uma das 2*2^k imagens do nivel k tem tamanho Wi x Hi, entao 4 delas serao fundidas em uma unica com resolucao Wi x Hi
+      - nivel k-2: para cada 4 imagens vizinhas, 2 imagens por coluna e as 2 imagens linha, serao juntadas gerando uma imagem de metada da resolucao Wi x Hi
+      ...
+      - nivel 0: dividir cada 4 imagens do nivel 1 (2 por linha e 2 por coluna), gerando uma imagem de metada da resolucao Wi x Hi
+
+  1.3 Estrutura de diretorios em que as imagens serao arquivadas
+      Nivel                                                                              0/
+      0                                                                                   +
+                             0/                                      1/                   |                   2/                                       3/
+      1                      +----------------------------------------+----------------------------------------+----------------------------------------+
+        0/           1/      |     2/          3/ 0/          1/      |    2/           3/ 0/          1/      |     2/           3/ 0/          1/     |     2/           3/
+      2  +------------+------------+------------+ +------------+------------+------------+ +------------+------------+------------+ +------------+------------+------------+
+         |            |            |            | |            |            |            | |            |            |            | |            |            |            |
+      3  +            +            +            + +            +            +            + +            +            +            + +            +            +            +
+                                                               x o arquivo daqui estaria em 0/1/1/0_1_1.png
+
+2. O iMA (iHistologia) devera' se comportar como os mapas de alta-resolucao, o usuario pode "se mover" pelo mapa.
+   Sem mudar a resolucao, quando o usuario passa do limite direito da imagem 0_1_1.png, devemos carregar a imagem 0_1_2.png (e desocupar a 0_1_0.png)
+   Ao aplica um "zoom in", devemos pegar as 4 imagens correspondentes no nivel abaixo (com o dobro de linhas e o dobro de colunas).
