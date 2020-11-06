@@ -1,10 +1,11 @@
 var canvas;
 
-const draw = function(ctx, source) {
+const draw = function(ctx, source, coords) {
+    ctx.clearRect(0, 0, canvas.element.width, canvas.element.height);
     const img = new Image();
 
     img.onload = function() {
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, coords.x, coords.y);
     };
     img.src = source;
 };
@@ -27,10 +28,16 @@ const mouseMove = function(e) {
 
     console.log("Dragging: " + canvas.isDragging);
     console.log("Inside: " + canvas.mouse.isInside);
-}
+
+    if (canvas.isDragging) {
+        draw(canvas.context, "https://snippets.cdn.mozilla.net/media/icons/56efef37-8e21-49df-9699-df9ae2c8a088.png", canvas.mouse);
+    }
+};
 
 const mouseDown = function(e) {
-    canvas.isDragging = canvas.mouse.isInside;
+    if (canvas.mouse.isInside) {
+        canvas.isDragging = true;
+    }
 };
 
 const mouseUp = function(e) {
@@ -38,11 +45,10 @@ const mouseUp = function(e) {
 
 };
 
-
 const init = function() {
     canvas = {
         element: document.getElementById("canvas"),
-        get context() { return canvas.element.getContext(); },
+        get context() { return canvas.element.getContext("2d"); },
         isDragging: false,
     
         mouse: {
@@ -53,13 +59,13 @@ const init = function() {
     
         get boundary() { return canvas.element.getBoundingClientRect(); },
         vertex: {
-            get a() { return { x: canvas.boundary.top,    y: canvas.boundary.left  }; },
-            get b() { return { x: canvas.boundary.top,    y: canvas.boundary.right }; },
-            get c() { return { x: canvas.boundary.bottom, y: canvas.boundary.left  }; },
-            get d() { return { x: canvas.boundary.bottom, y: canvas.boundary.right }; }
+            get a() { return { x: canvas.boundary.top + window.scrollY, y: canvas.boundary.left + window.scrollX }; },
+            get b() { return { x: canvas.boundary.top + window.scrollY, y: canvas.boundary.right                 }; },
+            get c() { return { x: canvas.boundary.bottom,               y: canvas.boundary.right                 }; },
+            get d() { return { x: canvas.boundary.bottom,               y: canvas.boundary.left + window.scrollX }; }
         }
-    }
-
+    };
+    
     canvas.element.setAttribute("width",  500);//window.getComputedStyle(document.body).getPropertyValue("width"));
     canvas.element.setAttribute("height", 500);//window.getComputedStyle(document.body).getPropertyValue("height"));
 
