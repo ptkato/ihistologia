@@ -1,13 +1,17 @@
-var canvas;
+var canvas = {};
 
 const draw = function(ctx, source, coords) {
     ctx.clearRect(0, 0, canvas.element.width, canvas.element.height);
     const img = new Image();
-
-    img.onload = function() {
-        ctx.drawImage(img, coords.x, coords.y);
-    };
     img.src = source;
+
+    if (!img.naturalWidth) {
+        img.onload = function() {
+            ctx.drawImage(img, coords.x, coords.y);
+        };
+    } else {
+        ctx.drawImage(img, coords.x, coords.y);
+    }
 };
 
 // const dotProduct = function(U, V) {
@@ -64,6 +68,8 @@ const init = function() {
         //     get c() { return { x: canvas.boundary.bottom,               y: canvas.boundary.right                 }; },
         //     get d() { return { x: canvas.boundary.bottom,               y: canvas.boundary.left + window.scrollX }; }
         // }
+
+        fragments: []
     };
     
     canvas.element.setAttribute("width",  500); // window.getComputedStyle(document.body).getPropertyValue("width"));
