@@ -8,10 +8,16 @@ const draw = function(ctx, source, coords) {
     if (!img.naturalWidth) {
         img.onload = function() {
             ctx.drawImage(img, coords.x, coords.y);
+            canvas.fragments.images.x = coords.x;
+            canvas.fragments.images.y = coords.y;
         };
     } else {
-        ctx.drawImage(img, coords.x, coords.y);
+        const vector = { x: canvas.mouse.x - canvas.mouse.prevX, y: canvas.mouse.y - canvas.mouse.prevY };
+        ctx.drawImage(img, canvas.fragments.images.x + vector.x, canvas.fragments.images.y + vector.y);
+        canvas.fragments.images.x += vector.x;
+        canvas.fragments.images.y += vector.y;
     }
+    canvas.fragments.images.image = img;
 };
 
 // const dotProduct = function(U, V) {
@@ -36,6 +42,9 @@ const mouseMove = function(e) {
     if (canvas.isDragging) {
         draw(canvas.context, "https://snippets.cdn.mozilla.net/media/icons/56efef37-8e21-49df-9699-df9ae2c8a088.png", canvas.mouse);
     }
+
+    canvas.mouse.prevX = e.clientX;
+    canvas.mouse.prevY = e.clientY;
 };
 
 const mouseDown = function(e) {
@@ -58,7 +67,9 @@ const init = function() {
         mouse: {
             // isInside: false,
             x: 0,
-            y: 0
+            y: 0,
+            prevX: 0,
+            prevY: 0
         },
     
         // get boundary() { return canvas.element.getBoundingClientRect(); },
@@ -69,7 +80,18 @@ const init = function() {
         //     get d() { return { x: canvas.boundary.bottom,               y: canvas.boundary.left + window.scrollX }; }
         // }
 
-        fragments: []
+        fragments: {
+            width: 0,
+            height: 0,
+            images: // []
+        
+            {
+                image: null,
+                x: 0,
+                y: 0
+            }
+        
+        }
     };
     
     canvas.element.setAttribute("width",  500); // window.getComputedStyle(document.body).getPropertyValue("width"));
