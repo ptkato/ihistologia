@@ -1,23 +1,37 @@
 var canvas = {};
 
-const draw = function(ctx, source, coords) {
+const fetchImage = function(focus) {
+
+};
+
+const draw = function(ctx, source, coords = { x: 0, y: 0 }) {
     ctx.clearRect(0, 0, canvas.element.width, canvas.element.height);
+
+    canvas.quadrants.images.forEach((i) => {
+        draw(ctx, { x: i.image.width, y:i.image.height });
+    });
+
     const img = new Image();
     img.src = source;
 
     if (!img.naturalWidth) {
         img.onload = function() {
             ctx.drawImage(img, coords.x, coords.y);
-            canvas.fragments.images.x = coords.x;
-            canvas.fragments.images.y = coords.y;
+            canvas.quadrants.images.push({
+                image = img,
+                x = coords.x,
+                y = coords.y
+            });
         };
     } else {
-        const vector = { x: canvas.mouse.x - canvas.mouse.prevX, y: canvas.mouse.y - canvas.mouse.prevY };
-        ctx.drawImage(img, canvas.fragments.images.x + vector.x, canvas.fragments.images.y + vector.y);
-        canvas.fragments.images.x += vector.x;
-        canvas.fragments.images.y += vector.y;
+        canvas.quadrants.images.map((i) => {
+            const vector = { x: canvas.mouse.x - canvas.mouse.prevX, y: canvas.mouse.y - canvas.mouse.prevY };
+            ctx.drawImage(img, i.x + vector.x, i.y + vector.y);
+            // i.image = img;
+            i.x += vector.x;
+            i.y += vector.y;
+        });
     }
-    canvas.fragments.images.image = img;
 };
 
 // const dotProduct = function(U, V) {
@@ -40,7 +54,7 @@ const mouseMove = function(e) {
     // console.log("Inside: " + canvas.mouse.isInside);
 
     if (canvas.isDragging) {
-        draw(canvas.context, "https://snippets.cdn.mozilla.net/media/icons/56efef37-8e21-49df-9699-df9ae2c8a088.png", canvas.mouse);
+        draw(canvas.context);
     }
 
     canvas.mouse.prevX = e.clientX;
@@ -80,16 +94,17 @@ const init = function() {
         //     get d() { return { x: canvas.boundary.bottom,               y: canvas.boundary.left + window.scrollX }; }
         // }
 
-        fragments: {
+        level: 0,
+        quadrants: {
             width: 0,
             height: 0,
-            images: // []
+            images: []
         
-            {
+            /*{
                 image: null,
                 x: 0,
                 y: 0
-            }
+            }*/
         
         }
     };
