@@ -1,15 +1,32 @@
 var canvas = {};
 
-const fetchImage = function(focus) {
-
+const dotProduct = function(U, V) {
+    return U.x * V.x + U.y * V.y;
 };
 
-const draw = function(ctx, source, coords = { x: 0, y: 0 }) {
-    ctx.clearRect(0, 0, canvas.element.width, canvas.element.height);
+const isInside = function(vertex) {
+    const AB = { x: canvas.vertex.b.x - canvas.vertex.a.x, y: canvas.vertex.b.y - canvas.vertex.a.y };
+    const AM = { x: vertex.x          - canvas.vertex.a.x, y: vertex.y          - canvas.vertex.a.y };
+    const BC = { x: canvas.vertex.c.x - canvas.vertex.b.x, y: canvas.vertex.c.y - canvas.vertex.b.y };
+    const BM = { x: vertex.x          - canvas.vertex.b.x, y: vertex.y          - canvas.vertex.b.y };
 
-    canvas.quadrants.images.forEach((i) => {
-        draw(ctx, { x: i.image.width, y:i.image.height });
-    });
+    return (0 <= dotProduct(AB, AM) && dotProduct(AB, AM) <= dotProduct(AB, AB))
+        && (0 <= dotProduct(BC, BM) && dotProduct(BC, BM) <= dotProduct(BC, BC));
+}
+
+const draw = function(ctx, source, coords) {
+    if (!coords) {
+        ctx.clearRect(0, 0, canvas.element.width, canvas.element.height);
+        coords = { x: 0, y: 0 };
+
+        canvas.quadrants.images = canvas.quadrants.images.filter(i => {
+            return isInside({ x: i.x,                 y: i.y                  })
+                || isInside({ x: i.x + i.image.width, y: i.y                  })
+                || isInside({ x: i.x + i.image.width, y: i.y + i.image.height })
+                || isInside({ x: i.x,                 y: i.y + i.image.height });
+        });
+        canvas.quadrants.images.forEach(i => i.drawn = false);
+    }
 
     const img = new Image();
     img.src = source;
@@ -18,40 +35,40 @@ const draw = function(ctx, source, coords = { x: 0, y: 0 }) {
         img.onload = function() {
             ctx.drawImage(img, coords.x, coords.y);
             canvas.quadrants.images.push({
+                drawn = true,
                 image = img,
                 x = coords.x,
                 y = coords.y
             });
         };
     } else {
-        canvas.quadrants.images.map((i) => {
-            const vector = { x: canvas.mouse.x - canvas.mouse.prevX, y: canvas.mouse.y - canvas.mouse.prevY };
-            ctx.drawImage(img, i.x + vector.x, i.y + vector.y);
-            // i.image = img;
-            i.x += vector.x;
-            i.y += vector.y;
+        canvas.quadrants.images.forEach(i => {
+            if (!i.drawn) {
+                const vector = { x: canvas.mouse.x - canvas.mouse.prevX, y: canvas.mouse.y - canvas.mouse.prevY };
+                ctx.drawImage(img, i.x + vector.x, i.y + vector.y);
+                i.drawn = true;
+                // i.image = img;
+                i.x += vector.x;
+                i.y += vector.y;
+
+                draw(ctx, "", { x: i.x,                 y: i.y - i.image.height });
+                draw(ctx, "", { x: i.x + i.image.width, y: i.y                  });
+                draw(ctx, "", { x: i.x,                 y: i.y + i.image.height });
+                draw(ctx, "", { x: i.x - i.image.width, y: i.y                  });
+            }
         });
     }
-};
 
-// const dotProduct = function(U, V) {
-//     return U.x * V.x + U.y * V.y;
-// };
+    canvas.quadrants.images.forEach(i => {
+        draw(ctx, { x: i.image.width, y: i.image.height });
+    });
+};
 
 const mouseMove = function(e) {
     canvas.mouse.x = e.clientX;
     canvas.mouse.y = e.clientY;
 
-    // const AB = { x: canvas.vertex.b.x - canvas.vertex.a.x, y: canvas.vertex.b.y - canvas.vertex.a.y };
-    // const AM = { x: canvas.mouse.x    - canvas.vertex.a.x, y: canvas.mouse.y    - canvas.vertex.a.y };
-    // const BC = { x: canvas.vertex.c.x - canvas.vertex.b.x, y: canvas.vertex.c.y - canvas.vertex.b.y };
-    // const BM = { x: canvas.mouse.x    - canvas.vertex.b.x, y: canvas.mouse.y    - canvas.vertex.b.y };
-
-    // canvas.mouse.isInside = (0 <= dotProduct(AB, AM) && dotProduct(AB, AM) <= dotProduct(AB, AB))
-    //                      && (0 <= dotProduct(BC, BM) && dotProduct(BC, BM) <= dotProduct(BC, BC));
-
     console.log("Dragging: " + canvas.isDragging);
-    // console.log("Inside: " + canvas.mouse.isInside);
 
     if (canvas.isDragging) {
         draw(canvas.context);
@@ -62,7 +79,6 @@ const mouseMove = function(e) {
 };
 
 const mouseDown = function(e) {
-    // if (canvas.mouse.isInside) {
     if (canvas.element === document.activeElement) {
         canvas.isDragging = true;
     }
@@ -79,20 +95,19 @@ const init = function() {
         isDragging: false,
     
         mouse: {
-            // isInside: false,
             x: 0,
             y: 0,
             prevX: 0,
             prevY: 0
         },
     
-        // get boundary() { return canvas.element.getBoundingClientRect(); },
-        // vertex: {
-        //     get a() { return { x: canvas.boundary.top + window.scrollY, y: canvas.boundary.left + window.scrollX }; },
-        //     get b() { return { x: canvas.boundary.top + window.scrollY, y: canvas.boundary.right                 }; },
-        //     get c() { return { x: canvas.boundary.bottom,               y: canvas.boundary.right                 }; },
-        //     get d() { return { x: canvas.boundary.bottom,               y: canvas.boundary.left + window.scrollX }; }
-        // }
+        get boundary() { return canvas.element.getBoundingClientRect(); },
+        vertex: {
+            get a() { return { x: canvas.boundary.top + window.scrollY, y: canvas.boundary.left + window.scrollX }; },
+            get b() { return { x: canvas.boundary.top + window.scrollY, y: canvas.boundary.right                 }; },
+            get c() { return { x: canvas.boundary.bottom,               y: canvas.boundary.right                 }; },
+            get d() { return { x: canvas.boundary.bottom,               y: canvas.boundary.left + window.scrollX }; }
+        },
 
         level: 0,
         quadrants: {
@@ -101,6 +116,7 @@ const init = function() {
             images: []
         
             /*{
+                drawn: false,
                 image: null,
                 x: 0,
                 y: 0
@@ -115,4 +131,6 @@ const init = function() {
     document.addEventListener("mousemove", mouseMove);
     document.addEventListener("mouseup",   mouseUp);
     document.addEventListener("mousedown", mouseDown);
+
+    draw(canvas.context);
 };
