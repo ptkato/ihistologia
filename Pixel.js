@@ -73,7 +73,7 @@ const draw = function(ctx, source, coords) {
         draw(ctx, (parseInt(source, 2) - (2 ** (canvas.level + 1) / 2)).toString(2).padStart(source.length, 0),
             { x: img.x, y: img.y - img.height * 2 });
 
-    if (true)
+    //if (true)
         draw(ctx, (parseInt(source, 2) + 4).toString(2).padStart(source.length, 0),
             { x: img.x + img.width * 2, y: img.y });
 
@@ -81,7 +81,7 @@ const draw = function(ctx, source, coords) {
         draw(ctx, (parseInt(source, 2) + (2 ** (canvas.level + 1) / 2)).toString(2).padStart(source.length, 0),
             { x: img.x, y: img.y + img.height * 2 });
 
-    if (parseInt(source + "00", 2) % (2 ** (canvas.level + 1) * 2))
+    //if (parseInt(source + "00", 2) % (2 ** (canvas.level + 1) * 2))
         draw(ctx, (parseInt(source, 2) - 4).toString(2).padStart(source.length, 0),
             { x: img.x - img.width * 2, y: img.y });
 };
