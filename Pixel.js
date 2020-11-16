@@ -12,7 +12,7 @@ const isInside = function(vertex) {
 
     return (0 <= dotProduct(AB, AM) && dotProduct(AB, AM) <= dotProduct(AB, AB))
         && (0 <= dotProduct(BC, BM) && dotProduct(BC, BM) <= dotProduct(BC, BC));
-}
+};
 
 const draw = function(ctx, source, coords) {
     if (!coords) {
@@ -20,48 +20,70 @@ const draw = function(ctx, source, coords) {
         coords = { x: 0, y: 0 };
 
         canvas.quadrants.images = canvas.quadrants.images.filter(i => {
-            return isInside({ x: i.x,                 y: i.y                  })
-                || isInside({ x: i.x + i.image.width, y: i.y                  })
-                || isInside({ x: i.x + i.image.width, y: i.y + i.image.height })
-                || isInside({ x: i.x,                 y: i.y + i.image.height });
+            return isInside({ x:  i.x,                      y:  i.y                       })
+                || isInside({ x: (i.x + i.image.width) * 2, y:  i.y                       })
+                || isInside({ x: (i.x + i.image.width) * 2, y: (i.y + i.image.height) * 2 })
+                || isInside({ x:  i.x,                      y: (i.y + i.image.height) * 2 });
         });
         canvas.quadrants.images.forEach(i => i.drawn = false);
     }
 
-    const img = new Image();
-    img.src = source;
+    const imgQ1 = new Image();
+    imgQ1.src = canvas.url + source + "00";
+    const imgQ2 = new Image();
+    imgQ2.src = canvas.url + source + "01";
+    const imgQ3 = new Image();
+    imgQ3.src = canvas.url + source + "10";
+    const imgQ4 = new Image();
+    imgQ4.src = canvas.url + source + "11";
 
-    if (!img.naturalWidth) {
-        img.onload = function() {
-            ctx.drawImage(img, coords.x, coords.y);
+    const imgIndex = canvas.quadrants.images.findIndex(i => imgQ1.src === i.image.src)
+    const img = canvas.quadrants.images[imgIndex];
+
+    if (!!imgIndex || !img.naturalWidth) {
+        imgQ1.onload = () => {
+                                 ctx.drawImage(imgQ1, coords.x,               coords.y);
+            imgQ2.onload = () => ctx.drawImage(imgQ2, coords.x + imgQ1.width, coords.y);
+            imgQ3.onload = () => ctx.drawImage(imgQ3, coords.x,               coords.y + imgQ1.height);
+            imgQ4.onload = () => ctx.drawImage(imgQ4, coords.x + imgQ1.width, coords.y + imgQ1.height);
+
             canvas.quadrants.images.push({
                 drawn = true,
-                image = img,
+                image = imgQ1,
+                images = [imgQ1, imgQ2, imgQ3, imgQ4],
                 x = coords.x,
                 y = coords.y
             });
         };
     } else {
-        canvas.quadrants.images.forEach(i => {
-            if (!i.drawn) {
-                const vector = { x: canvas.mouse.x - canvas.mouse.prevX, y: canvas.mouse.y - canvas.mouse.prevY };
-                ctx.drawImage(img, i.x + vector.x, i.y + vector.y);
-                i.drawn = true;
-                // i.image = img;
-                i.x += vector.x;
-                i.y += vector.y;
+        const vector = { x: canvas.mouse.x - canvas.mouse.prevX, y: canvas.mouse.y - canvas.mouse.prevY };
+        ctx.drawImage(imgQ1, img.x + vector.x,               img.y + vector.y);
+        ctx.drawImage(imgQ2, img.x + imgQ1.width + vector.x, img.y + vector.y);
+        ctx.drawImage(imgQ3, img.x,                          img.y + imgQ1.height + vector.y);
+        ctx.drawImage(imgQ4, img.x + imgQ1.width + vector.x, img.y + imgQ1.height + vector.y);
 
-                draw(ctx, "", { x: i.x,                 y: i.y - i.image.height });
-                draw(ctx, "", { x: i.x + i.image.width, y: i.y                  });
-                draw(ctx, "", { x: i.x,                 y: i.y + i.image.height });
-                draw(ctx, "", { x: i.x - i.image.width, y: i.y                  });
-            }
-        });
+        canvas.quadrants.images.splice(imgIndex, 1, Object.assign(img, {
+            drawn: true,
+            x: img.x + vector.x,
+            y: img.x + vector.y
+        }));
     }
 
-    canvas.quadrants.images.forEach(i => {
-        draw(ctx, { x: i.image.width, y: i.image.height });
-    });
+    if (parseInt(source + "00", 2) >= 2 ** (canvas.level + 1) * 2)
+        draw(ctx, (parseInt(source, 2) - (2 ** (canvas.level + 1) / 2)).toString(2).padStart(source.length, 0),
+            { x: img.x, y: img.y - img.height * 2 });
+
+    if (true)
+        draw(ctx, (parseInt(source, 2) + 4).toString(2).padStart(source.length, 0),
+            { x: img.x + img.width * 2, y: img.y });
+
+    if (parseInt(source + "00", 2) < 4 ** (canvas.level + 1) - 2 ** (canvas.level + 1) * 2)
+        draw(ctx, (parseInt(source, 2) + (2 ** (canvas.level + 1) / 2)).toString(2).padStart(source.length, 0),
+            { x: img.x, y: img.y + img.height * 2 });
+
+    if (parseInt(source + "00", 2) % (2 ** (canvas.level + 1) * 2))
+        draw(ctx, (parseInt(source, 2) - 4).toString(2).padStart(source.length, 0),
+            { x: img.x - img.width * 2, y: img.y });
 };
 
 const mouseMove = function(e) {
@@ -90,6 +112,7 @@ const mouseUp = function(e) {
 
 const init = function() {
     canvas = {
+        url: "http://localhost:5000/image/",
         element: document.getElementById("canvas"),
         get context() { return canvas.element.getContext("2d"); },
         isDragging: false,
@@ -118,6 +141,7 @@ const init = function() {
             /*{
                 drawn: false,
                 image: null,
+                images: [],
                 x: 0,
                 y: 0
             }*/
@@ -132,5 +156,5 @@ const init = function() {
     document.addEventListener("mouseup",   mouseUp);
     document.addEventListener("mousedown", mouseDown);
 
-    draw(canvas.context);
+    draw(canvas.context, "00");
 };

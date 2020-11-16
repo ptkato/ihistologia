@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 @app.route("/image/<string:image>")
 def serve_image(image):
-    return send_from_directory("00/" + "/".join(a + b for a, b in zip(image[:-6][::2], image[:-6][1::2])) + "/", image)
+    return send_from_directory("00/" + "/".join(a + b for a, b in zip(image[:-2][::2], image[:-2][1::2])) + "/", image + ".jpg")
 
 def crop(k, dir, im, x, y, sx, sy):
     if (k == 0):
