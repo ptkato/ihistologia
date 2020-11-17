@@ -37,8 +37,8 @@ const draw = function(ctx, source, coords) {
     const imgQ4 = new Image();
     imgQ4.src = canvas.url + source + "11";
 
-    const imgIndex = canvas.quadrants.images.findIndex(i => imgQ1.src === i.image.src)
-    const img = canvas.quadrants.images[imgIndex];
+    const imgIndex = canvas.quadrants.images.findIndex(i => imgQ1.src == i.image.src);
+    var img = canvas.quadrants.images[imgIndex] || {};
 
     if (!!imgIndex || !img.naturalWidth) {
         imgQ1.onload = () => {
@@ -47,13 +47,16 @@ const draw = function(ctx, source, coords) {
             imgQ3.onload = () => ctx.drawImage(imgQ3, coords.x,               coords.y + imgQ1.height);
             imgQ4.onload = () => ctx.drawImage(imgQ4, coords.x + imgQ1.width, coords.y + imgQ1.height);
 
-            canvas.quadrants.images.push({
-                drawn = true,
-                image = imgQ1,
-                images = [imgQ1, imgQ2, imgQ3, imgQ4],
-                x = coords.x,
-                y = coords.y
-            });
+            let newImg = {
+                drawn: true,
+                image: imgQ1,
+                images: [imgQ1, imgQ2, imgQ3, imgQ4],
+                x: coords.x,
+                y: coords.y
+            };
+
+            canvas.quadrants.images.push(newImg);
+            Object.assign(img, newImg);
         };
     } else {
         const vector = { x: canvas.mouse.x - canvas.mouse.prevX, y: canvas.mouse.y - canvas.mouse.prevY };
@@ -69,21 +72,31 @@ const draw = function(ctx, source, coords) {
         }));
     }
 
-    if (parseInt(source + "00", 2) >= 2 ** (canvas.level + 1) * 2)
-        draw(ctx, (parseInt(source, 2) - (2 ** (canvas.level + 1) / 2)).toString(2).padStart(source.length, 0),
+    if (parseInt(source + "00", 2) >= 2 ** (canvas.level + 1) * 2) {
+        draw(ctx, (parseInt(source, 2) - (2 ** (canvas.level + 1) * 2)).toString(2).padStart(source.length, 0),
             { x: img.x, y: img.y - img.height * 2 });
+    }
 
-    //if (true)
+    if ((parseInt(source + "00", 2) + 4) % (2 ** (canvas.level + 1) * 2)) {
         draw(ctx, (parseInt(source, 2) + 4).toString(2).padStart(source.length, 0),
             { x: img.x + img.width * 2, y: img.y });
+    }// } else {
+    //     draw(ctx, (parseInt(source, 2) + 2 ** (canvas.level + 1) * 2).toString(2).padStart(source.length, 0),
+    //         { x: img.x + img.width * 2, y: img.y });
+    // }
 
-    if (parseInt(source + "00", 2) < 4 ** (canvas.level + 1) - 2 ** (canvas.level + 1) * 2)
-        draw(ctx, (parseInt(source, 2) + (2 ** (canvas.level + 1) / 2)).toString(2).padStart(source.length, 0),
+    if (parseInt(source + "00", 2) < 4 ** (canvas.level + 1) - 2 ** (canvas.level + 1) * 2) {
+        draw(ctx, (parseInt(source, 2) + (2 ** (canvas.level + 1) * 2)).toString(2).padStart(source.length, 0),
             { x: img.x, y: img.y + img.height * 2 });
+    }
 
-    //if (parseInt(source + "00", 2) % (2 ** (canvas.level + 1) * 2))
+    if (parseInt(source + "00", 2) % (2 ** (canvas.level + 1) * 2)) {
         draw(ctx, (parseInt(source, 2) - 4).toString(2).padStart(source.length, 0),
             { x: img.x - img.width * 2, y: img.y });
+    }// } else {
+    //     draw(ctx, (parseInt(source, 2) + 2 ** (canvas.level + 1) * 2).toString(2).padStart(source.length, 0),
+    //         { x: img.x - img.width * 2, y: img.y });
+    // }
 };
 
 const mouseMove = function(e) {
@@ -91,9 +104,10 @@ const mouseMove = function(e) {
     canvas.mouse.y = e.clientY;
 
     console.log("Dragging: " + canvas.isDragging);
+    console.log(canvas);
 
     if (canvas.isDragging) {
-        draw(canvas.context);
+        draw(canvas.context, "");
     }
 
     canvas.mouse.prevX = e.clientX;
@@ -156,5 +170,15 @@ const init = function() {
     document.addEventListener("mouseup",   mouseUp);
     document.addEventListener("mousedown", mouseDown);
 
-    draw(canvas.context, "00");
+    document.getElementById("closer").addEventListener("click", () => {
+        canvas.level++;
+        document.getElementById("level").innerText = canvas.level;
+    });
+    document.getElementById("farther").addEventListener("click", () => {
+        if (canvas.level > 0)
+            canvas.level--;
+        document.getElementById("level").innerText = canvas.level;
+    });
+
+    draw(canvas.context, "");
 };
