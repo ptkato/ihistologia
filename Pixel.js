@@ -26,11 +26,15 @@ const canvas = {
     },
 
     url: "http://127.0.0.1:5000/image/",
+    width: 0,
+    height: 0,
     images: [],
-    level: 1
+    level: 0
 };
 
 const mouse = {
+    x: 0,
+    y: 0,
     prevX: 0,
     prevY: 0
 };
@@ -48,27 +52,30 @@ const draw = function(ctx, csize, isize, url, level, images, coords) {
 }
 
 const draw_ = function(ctx, isize, url, level, images, id, coords) {
-    if (!isInside(coords, canvas.vertices)) {
-        return images;
-    } else {
+    // if (!isInside(coords, canvas.vertices)) {
+    //     return images;
+    // } else {
         const decimal = parseInt(id, 2);
-
-        const index = images.findIndex((i) => (url + id) === i.image.src);
+        
+        const index = images.findIndex((i) => (url + id) == i.image.src);
         const target = images[index];
         if (target) {
             if (target.drawn) {
                 return images;
             } else {
-                if (target.image.naturalWidth) {
-                    ctx.drawImage(target.image, target.x + coords.x, target.y + coords.y);
-                } else {
-                    target.image.onload = () => ctx.drawImage(target.image, target.x + coords.x, target.y + coords.y);
-                }
+                const vector = { x: target.x + coords.x, y: target.y + coords.y };
 
+                if (target.image.naturalWidth) {
+                    console.log(vector);
+                    ctx.drawImage(target.image, vector.x, vector.y);
+                } else {
+                    target.image.onload = () => ctx.drawImage(target.image, vector.x, vector.y);
+                }
+                
                 images.push({
                     image: target.image,
-                    x: target.x + coords.x,
-                    y: target.y + coords.y,
+                    x: vector.x,
+                    y: vector.y,
                     drawn: true
                 });
                 images.splice(index);
@@ -76,7 +83,6 @@ const draw_ = function(ctx, isize, url, level, images, id, coords) {
         } else {
             const image = new Image();
             image.src = url + id;
-            console.log(decimal);
 
             image.onload = () => ctx.drawImage(image, coords.x, coords.y);
             images.push({
@@ -123,7 +129,7 @@ const draw_ = function(ctx, isize, url, level, images, id, coords) {
         }
 
         return images;
-    }
+    // }
 };
 
 const main = function() {
@@ -132,26 +138,26 @@ const main = function() {
     c.setAttribute("height", 1000); // window.getComputedStyle(document.body).getPropertyValue("height"));
 
     document.addEventListener("mousemove", (e) => {
-        const image = new Image();
-        image.src = canvas.url + "0".repeat((canvas.level + 1) * 2)
-
-        image.onload = () => {
-            if (c === document.activeElement && e.buttons === 1) {
-                canvas.images = draw(c.getContext("2d"), canvas.boundary, {width: image.width, height: image.height},
-                    canvas.url, canvas.level, canvas.images,
-                    {x: e.clientX - mouse.prevX, y: e.clientY - mouse.prevY});
-                
-                mouse.prevX = e.clientX;
-                mouse.prevY = e.clientY;
-            }
-        };
+        if (c === document.activeElement && e.buttons === 1) {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            
+            canvas.images = draw(c.getContext("2d"), canvas.boundary, {width: canvas.width, height: canvas.height},
+                canvas.url, canvas.level, canvas.images,
+                {x: mouse.x - mouse.prevX, y: mouse.y - mouse.prevY});
+            
+            mouse.prevX = e.clientX;
+            mouse.prevY = e.clientY;
+        }
     });
 
     const image = new Image();
     image.src = canvas.url + "0".repeat((canvas.level + 1) * 2)
 
     image.onload = () => {
-        canvas.images = draw(c.getContext("2d"), canvas.boundary, {width: image.width, height: image.height},
+        canvas.width = image.width;
+        canvas.height = image.height;
+        canvas.images = draw(c.getContext("2d"), canvas.boundary, {width: canvas.width, height: canvas.height},
             canvas.url, canvas.level, canvas.images, {x: 0, y: 0});
     }
 };
