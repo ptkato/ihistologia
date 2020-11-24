@@ -33,7 +33,7 @@ const canvas = {
     width: 0,
     height: 0,
     images: [],
-    level: 4
+    level: 0
 };
 
 const mouse = {
@@ -138,28 +138,7 @@ const draw_ = function(ctx, isize, url, level, images, id, coords) {
    }
 };
 
-const main = function() {
-    const c = document.getElementById("canvas");
-    c.setAttribute("width",  1000); // window.getComputedStyle(document.body).getPropertyValue("width"));
-    c.setAttribute("height", 1000); // window.getComputedStyle(document.body).getPropertyValue("height"));
-
-    document.addEventListener("mousedown", (e) => {
-        console.log(e);
-        if (c === document.activeElement && e.buttons === 1) {
-            mouse.prevX = e.clientX;
-            mouse.prevY = e.clientY;
-        }
-    });
-    document.addEventListener("mouseup", (e) => {
-        if (c === document.activeElement) {
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-
-            canvas.images = draw(c.getContext("2d"), canvas.boundary, canvas,
-                canvas.url, canvas.level, canvas.images, mouse);
-        }
-    });
-
+const init = function(c) {
     const image = new Image();
     image.src = canvas.url + "0".repeat((canvas.level + 1) * 2)
 
@@ -169,4 +148,35 @@ const main = function() {
         canvas.images = draw(c.getContext("2d"), canvas.boundary, canvas,
             canvas.url, canvas.level, canvas.images, {x: 0, y: 0});
     }
+}
+
+const main = function() {
+    const c = document.getElementById("canvas");
+    c.setAttribute("width",  window.getComputedStyle(document.body).getPropertyValue("width"));
+    c.setAttribute("height", window.getComputedStyle(document.body).getPropertyValue("height"));
+
+    document.addEventListener("mousedown", (e) => {
+        if (c === document.activeElement && e.button === 0) {
+            mouse.prevX = e.clientX;
+            mouse.prevY = e.clientY;
+        }
+    });
+    document.addEventListener("mouseup", (e) => {
+        if (c === document.activeElement && e.button === 0) {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+
+            canvas.images = draw(c.getContext("2d"), canvas.boundary, canvas,
+                canvas.url, canvas.level, canvas.images, mouse);
+        }
+    });
+
+    document.addEventListener("wheel", (e) => {
+        if (c === document.activeElement) {
+            canvas.level += e.deltaY > 0 ? 1 : -1;
+            init(c);
+        }
+    });
+
+    init(c);
 };
