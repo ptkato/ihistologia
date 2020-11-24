@@ -17,7 +17,7 @@ const toBinary = function(decimal, padding) {
 };
 
 const getId = function (source) {
-    return /\/([01])+$/.exec(source);
+    return /[01]+$/.exec(source)[0];
 };
 
 const canvas = {
@@ -50,35 +50,38 @@ const mouse = {
 const draw = function(ctx, csize, isize, url, level, images, coords) {
     ctx.clearRect(0, 0, csize.width, csize.height);
 
+    const seedImage = images[Math.floor((images.length - 1) / 2)] || {image: {src: "0".repeat((level + 1) * 2)}};
+    const seedCoord = images[Math.floor((images.length - 1) / 2)]
+        ? {x : seedImage.x + coords.x - coords.prevX, y: seedImage.y + coords.y - coords.prevY} : coords;
+
     return draw_(ctx, isize, url, level, images.map((i) => {
         return Object.assign(i, {drawn: false});
-    }), "0".repeat((level + 1) * 2), coords);
+    }), getId(seedImage.image.src), seedCoord);
 }
 
 const draw_ = function(ctx, isize, url, level, images, id, coords) {
+    const decimal = parseInt(id, 2);
+
     if (!isInside(coords, canvas.vertices)) {
         return images;
     } else {
-        const decimal = parseInt(id, 2);
-        
         const index = images.findIndex((i) => (url + id) == i.image.src);
         const target = images[index];
+
         if (target) {
             if (target.drawn) {
                 return images;
             } else {
-                const vector = { x: coords.x - coords.prevX, y: coords.y - coords.prevY };
-
                 if (target.image.naturalWidth) {
-                    ctx.drawImage(target.image, target.x + vector.x, target.y + vector.y);
+                    ctx.drawImage(target.image, coords.x, coords.y);
                 } else {
-                    target.image.onload = () => ctx.drawImage(target.image, target.x + vector.x, target.y + vector.y);
+                    target.image.onload = () => ctx.drawImage(target.image, coords.x, coords.y);
                 }
                 
                 images.push({
                     image: target.image,
-                    x: target.x + vector.x,
-                    y: target.y + vector.y,
+                    x: coords.x,
+                    y: coords.y,
                     drawn: true
                 });
                 images.splice(index);
@@ -132,7 +135,7 @@ const draw_ = function(ctx, isize, url, level, images, id, coords) {
         }
 
         return images;
-    }
+   }
 };
 
 const main = function() {
@@ -140,16 +143,20 @@ const main = function() {
     c.setAttribute("width",  1000); // window.getComputedStyle(document.body).getPropertyValue("width"));
     c.setAttribute("height", 1000); // window.getComputedStyle(document.body).getPropertyValue("height"));
 
-    document.addEventListener("mousemove", (e) => {
+    document.addEventListener("mousedown", (e) => {
+        console.log(e);
         if (c === document.activeElement && e.buttons === 1) {
+            mouse.prevX = e.clientX;
+            mouse.prevY = e.clientY;
+        }
+    });
+    document.addEventListener("mouseup", (e) => {
+        if (c === document.activeElement) {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
 
-            canvas.images = draw(c.getContext("2d"), canvas.boundary, {width: canvas.width, height: canvas.height},
+            canvas.images = draw(c.getContext("2d"), canvas.boundary, canvas,
                 canvas.url, canvas.level, canvas.images, mouse);
-            
-            mouse.prevX = e.clientX;
-            mouse.prevY = e.clientY;
         }
     });
 
@@ -159,7 +166,7 @@ const main = function() {
     image.onload = () => {
         canvas.width = image.width;
         canvas.height = image.height;
-        canvas.images = draw(c.getContext("2d"), canvas.boundary, {width: canvas.width, height: canvas.height},
+        canvas.images = draw(c.getContext("2d"), canvas.boundary, canvas,
             canvas.url, canvas.level, canvas.images, {x: 0, y: 0});
     }
 };
