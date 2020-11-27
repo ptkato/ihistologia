@@ -12,6 +12,13 @@ const isInside = function(vertex, square) {
         && (0 <= dotProduct(BC, BM) && dotProduct(BC, BM) <= dotProduct(BC, BC));
 };
 
+const isInsideSquare = function(vertex, square, isize) {
+    return isInside(vertex, square)
+        || isInside({x: vertex.x + isize.width, y: vertex.y}, square)
+        || isInside({x: vertex.x,               y: vertex.y + isize.height}, square)
+        || isInside({x: vertex.x + isize.width, y: vertex.y + isize.height}, square);
+};
+
 const toBinary = function(decimal, padding) {
     return decimal.toString(2).padStart(padding, 0);
 };
@@ -62,7 +69,7 @@ const draw = function(ctx, csize, isize, url, level, images, coords) {
 const draw_ = function(ctx, isize, url, level, images, id, coords) {
     const decimal = parseInt(id, 2);
 
-    if (!isInside(coords, canvas.vertices)) {
+    if (!isInsideSquare(coords, canvas.vertices, isize)) {
         return images;
     } else {
         const index = images.findIndex((i) => (url + id) == i.image.src);
