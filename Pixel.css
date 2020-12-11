@@ -5,6 +5,15 @@ html, body {
     background-color: darkgreen;
 }
 
-canvas {
+#canvas {
     background-color: palevioletred;
+}
+
+#level {
+    position: fixed;
+    left: 5px;
+    bottom: 5px;
+    font-size: 30;
+    color: black;
+    font-weight: 800;
 }

@@ -67,12 +67,19 @@ const draw = function(ctx, csize, isize, url, level, images, coords) {
 }
 
 const draw_ = function(ctx, isize, url, level, images, id, coords) {
+    if (level != canvas.level) {
+        return images;
+    }
+
     const decimal = parseInt(id, 2);
+    const index = images.findIndex((i) => (url + id) == i.image.src);
 
     if (!isInsideSquare(coords, canvas.vertices, isize)) {
+        if (index != -1) {
+            images.splice(index);
+        }
         return images;
     } else {
-        const index = images.findIndex((i) => (url + id) == i.image.src);
         const target = images[index];
 
         if (target) {
@@ -180,7 +187,14 @@ const main = function() {
 
     document.addEventListener("wheel", (e) => {
         if (c === document.activeElement) {
-            canvas.level += e.deltaY > 0 ? 1 : -1;
+            if (e.deltaY > 0) {
+                canvas.level += 1;
+            } else {
+                if (canvas.level > 0) {
+                    canvas.level += -1;
+                }
+            }
+            document.getElementById("level").innerText = canvas.level;
             init(c);
         }
     });
