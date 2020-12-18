@@ -1,3 +1,21 @@
+const kronecker = function(target, mask) {
+    const result = [[Math.ceil(target[0] / mask[0]), Math.ceil(target[1] / mask[1])],
+        [((target[0] - 1) % mask[0]) + 1, ((target[1] - 1) % mask[1]) + 1]];
+
+    var quadrant = result[0].join("");
+    switch (quadrant) {
+        case "11": quadrant = "00"; break;
+        case "12": quadrant = "01"; break;
+        case "21": quadrant = "10"; break;
+        case "22": quadrant = "11"; break;
+    }
+
+    if (mask[0] == 2)
+        return quadrant;
+
+    return (quadrant + kronecker(result[1], [mask[0] / 2, mask[1] / 2]));
+}
+
 const dotProduct = function(U, V) {
     return U.x * V.x + U.y * V.y;
 };
@@ -63,15 +81,15 @@ const draw = function(ctx, csize, isize, url, level, images, coords) {
 
     return draw_(ctx, isize, url, level, images.map((i) => {
         return Object.assign(i, {drawn: false});
-    }), getId(seedImage.image.src), seedCoord);
+    }), [1,1], seedCoord);
 }
 
-const draw_ = function(ctx, isize, url, level, images, id, coords) {
-    if (level != canvas.level) {
+const draw_ = function(ctx, isize, url, level, images, pos, coords) {
+    if (level != canvas.level || pos.some((i) => i < 1 || i > (2 ** (level + 1)))) {
         return images;
     }
 
-    const decimal = parseInt(id, 2);
+    const id = kronecker(pos, [2 ** (level + 1), 2 ** (level + 1)]);
     const index = images.findIndex((i) => (url + id) == i.image.src);
 
     if (!isInsideSquare(coords, canvas.vertices, isize)) {
@@ -112,41 +130,11 @@ const draw_ = function(ctx, isize, url, level, images, id, coords) {
                 drawn: true
             });
         }
-
-        switch (decimal % 4) {
-            case 0: 
-                if (decimal >= 2 ** (level + 1) * 2)
-                    images = draw_(ctx, isize, url, level, images, toBinary(decimal - 2 ** (level + 1) * 2 + 2, id.length), { x: coords.x,               y: coords.y - isize.height });
-                images = draw_(ctx, isize, url, level, images, toBinary(decimal + 1, id.length),                        { x: coords.x + isize.width, y: coords.y                });
-                images = draw_(ctx, isize, url, level, images, toBinary(decimal + 2, id.length),                        { x: coords.x,               y: coords.y + isize.height });
-                if (![0, 2].includes(decimal % (2 ** (level + 1) * 2)))
-                    images = draw_(ctx, isize, url, level, images, toBinary(decimal - 3, id.length),                        { x: coords.x - isize.width, y: coords.y                });
-                break;
-            case 1:
-                if (decimal >= 2 ** (level + 1) * 2)
-                    images = draw_(ctx, isize, url, level, images, toBinary(decimal - 2 ** (level + 1) * 2 + 2, id.length), { x: coords.x,               y: coords.y - isize.height });
-                if (![0, 2].includes((decimal + 3) % (2 ** (level + 1) * 2)))
-                    images = draw_(ctx, isize, url, level, images, toBinary(decimal + 3, id.length),                        { x: coords.x + isize.width, y: coords.y                });
-                images = draw_(ctx, isize, url, level, images, toBinary(decimal + 2, id.length),                        { x: coords.x,               y: coords.y + isize.height });
-                images = draw_(ctx, isize, url, level, images, toBinary(decimal - 1, id.length),                        { x: coords.x - isize.width, y: coords.y                });
-                break;
-            case 2:
-                images = draw_(ctx, isize, url, level, images, toBinary(decimal - 2, id.length),                        { x: coords.x,               y: coords.y - isize.height });
-                images = draw_(ctx, isize, url, level, images, toBinary(decimal + 1, id.length),                        { x: coords.x + isize.width, y: coords.y                });
-                if (decimal < 4 ** (level + 1) - 2 ** (level + 1) * 2)
-                    images = draw_(ctx, isize, url, level, images, toBinary(decimal + 2 ** (level + 1) * 2 - 2, id.length), { x: coords.x,               y: coords.y + isize.height });
-                if (![0, 2].includes(decimal % (2 ** (level + 1) * 2)))
-                    images = draw_(ctx, isize, url, level, images, toBinary(decimal - 3, id.length),                        { x: coords.x - isize.width, y: coords.y                });
-                break;
-            case 3:
-                images = draw_(ctx, isize, url, level, images, toBinary(decimal - 2, id.length),                        { x: coords.x,               y: coords.y - isize.height });
-                if (![0, 2].includes((decimal + 3) % (2 ** (level + 1) * 2)))
-                    images = draw_(ctx, isize, url, level, images, toBinary(decimal + 3, id.length),                        { x: coords.x + isize.width, y: coords.y                });
-                if (decimal < 4 ** (level + 1) - 2 ** (level + 1) * 2)
-                    images = draw_(ctx, isize, url, level, images, toBinary(decimal + 2 ** (level + 1) * 2 - 2, id.length), { x: coords.x,               y: coords.y + isize.height });
-                images = draw_(ctx, isize, url, level, images, toBinary(decimal - 1, id.length),                        { x: coords.x - isize.width, y: coords.y                });
-                break;
-        }
+        console.log(pos);
+        images = draw_(ctx, isize, url, level, images, [pos[0] - 1, pos[1]], { x: coords.x,               y: coords.y - isize.height });
+        images = draw_(ctx, isize, url, level, images, [pos[0], pos[1] + 1], { x: coords.x + isize.width, y: coords.y                });
+        images = draw_(ctx, isize, url, level, images, [pos[0] + 1, pos[1]], { x: coords.x,               y: coords.y + isize.height });
+        images = draw_(ctx, isize, url, level, images, [pos[0], pos[1] - 1], { x: coords.x - isize.width, y: coords.y                });
 
         return images;
    }
