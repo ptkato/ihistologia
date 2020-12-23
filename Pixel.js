@@ -10,7 +10,7 @@ const kronecker = function(target, mask) {
         case "22": quadrant = "11"; break;
     }
 
-    if (mask[0] == 2)
+    if (mask[0] == 1)
         return quadrant;
 
     return (quadrant + kronecker(result[1], [mask[0] / 2, mask[1] / 2]));
