@@ -2,12 +2,41 @@
 <html>
     <head>
         <meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet"> 
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flexboxgrid/6.3.1/flexboxgrid.min.css" type="text/css" >
         <link rel="stylesheet" href="Pixel.css">
         <script src="Pixel.js"></script>
     </head>
-    <body>
-        <canvas id="canvas" tabindex="0"></canvas>
-        <span id="level">0</span>
+    <body class="container">
+        <div class="row">
+            <div class="col-xs-7">
+                <div class="box">
+                    <header>iHistology</header>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-7">
+                <div id="canvas-box" class="box">
+                    <canvas id="canvas" tabindex="0"></canvas>
+                </div>
+            </div>
+            <div class="col-xs-5">
+                <div class="box">
+                    <div id="meta" class="row">
+                        <div class="col-xs-12">
+                            <div id="minimap" class="box"></div>
+                        </div>
+                        <div class="col-xs-12">
+                            <div class="box">You are at level <span id="level">0</span></div>
+                        </div>
+                        <div class="col-xs-12">
+                            <div class="box"><span>Use the mouse-wheel to change the zoom level, click and drag on the image to navigate through it.</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <script>main();</script>
     </body>
 </html>

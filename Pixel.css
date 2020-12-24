@@ -1,19 +1,30 @@
 html, body {
-    margin: 0;
+    overflow: hidden;
     width: 100vw;
     height: 100vh;
-    background-color: darkgreen;
+    font-family: 'Roboto Mono', monospace;
+}
+
+header {
+    font-size: 30px;
+    margin: 0 auto 10px auto;
+    width: 180px;
+}
+
+#canvas-box {
+    min-height: 500px;
 }
 
 #canvas {
     background-color: palevioletred;
 }
 
-#level {
-    position: fixed;
-    left: 5px;
-    bottom: 5px;
-    font-size: 30;
-    color: black;
-    font-weight: 800;
+#meta > div {
+    margin-bottom: 10px;
+}
+
+#minimap {
+    border: 1px solid palevioletred;
+    width: 100px;
+    height: 100px;
 }

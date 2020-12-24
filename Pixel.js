@@ -75,13 +75,12 @@ const mouse = {
 const draw = function(ctx, csize, isize, url, level, images, coords) {
     ctx.clearRect(0, 0, csize.width, csize.height);
 
-    const seedImage = images[Math.floor((images.length - 1) / 2)] || {image: {src: "0".repeat((level + 1) * 2)}};
-    const seedCoord = images[Math.floor((images.length - 1) / 2)]
-        ? {x : seedImage.x + coords.x - coords.prevX, y: seedImage.y + coords.y - coords.prevY} : coords;
+    const seedCoord = images[0] ? {x : coords.x - coords.prevX, y: coords.y - coords.prevY} : coords;
+    const seedImage = images[0] ? images.find((i) => isInsideSquare({x: seedCoord.x + i.x, y: seedCoord.y + i.y}, canvas.vertices, isize)) || {pos: [1,1], x: 0, y: 0} : {pos: [1,1], x: 0, y: 0};
 
     return draw_(ctx, isize, url, level, images.map((i) => {
         return Object.assign(i, {drawn: false});
-    }), [1,1], seedCoord);
+    }), seedImage.pos, {x: seedCoord.x + seedImage.x, y: seedCoord.y + seedImage.y});
 }
 
 const draw_ = function(ctx, isize, url, level, images, pos, coords) {
@@ -114,7 +113,8 @@ const draw_ = function(ctx, isize, url, level, images, pos, coords) {
                     image: target.image,
                     x: coords.x,
                     y: coords.y,
-                    drawn: true
+                    drawn: true,
+                    pos: pos
                 });
                 images.splice(index);
             }
@@ -127,10 +127,11 @@ const draw_ = function(ctx, isize, url, level, images, pos, coords) {
                 image: image,
                 x: coords.x,
                 y: coords.y,
-                drawn: true
+                drawn: true,
+                pos: pos
             });
         }
-        console.log(pos);
+
         images = draw_(ctx, isize, url, level, images, [pos[0] - 1, pos[1]], { x: coords.x,               y: coords.y - isize.height });
         images = draw_(ctx, isize, url, level, images, [pos[0], pos[1] + 1], { x: coords.x + isize.width, y: coords.y                });
         images = draw_(ctx, isize, url, level, images, [pos[0] + 1, pos[1]], { x: coords.x,               y: coords.y + isize.height });
@@ -153,9 +154,10 @@ const init = function(c) {
 }
 
 const main = function() {
+    const cbox = document.getElementById("canvas-box");
     const c = document.getElementById("canvas");
-    c.setAttribute("width",  window.getComputedStyle(document.body).getPropertyValue("width"));
-    c.setAttribute("height", window.getComputedStyle(document.body).getPropertyValue("height"));
+    c.setAttribute("width",  window.getComputedStyle(cbox).getPropertyValue("width"));
+    c.setAttribute("height", window.getComputedStyle(cbox).getPropertyValue("height"));
 
     document.addEventListener("mousedown", (e) => {
         if (c === document.activeElement && e.button === 0) {
