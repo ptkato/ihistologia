@@ -88,7 +88,10 @@ const draw_ = function(ctx, isize, url, level, images, pos, coords) {
         return images;
     }
 
-    const id = kronecker(pos, [2 ** (level + 1), 2 ** (level + 1)]);
+    const targetImage = kronecker(pos, [2 ** (level + 1), 2 ** (level + 1)]);
+    const idPath = targetImage.substring(0, targetImage.length - 2).match(/.{1,2}/g).join('/');
+    const id = "00/" + idPath + "/" + targetImage + ".jpg";
+    
     const index = images.findIndex((i) => (url + id) == i.image.src);
 
     if (!isInsideSquare(coords, canvas.vertices, isize)) {
@@ -143,7 +146,9 @@ const draw_ = function(ctx, isize, url, level, images, pos, coords) {
 
 const init = function(c) {
     const image = new Image();
-    image.src = canvas.url + "0".repeat((canvas.level + 1) * 2)
+
+    const targetImage = "0".repeat((canvas.level + 1) * 2);
+    image.src = canvas.url + targetImage.match(/.{1,2}/g).join('/').concat("/") + targetImage + ".jpg";
 
     image.onload = () => {
         canvas.width = image.width;

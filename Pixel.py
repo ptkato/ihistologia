@@ -6,13 +6,13 @@ import os
 from PIL  import Image, ImageFont, ImageDraw
 from math import log2, pow
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_file
 
 app = Flask(__name__)
 
-@app.route("/image/<string:image>")
+@app.route("/image/<path:image>")
 def serve_image(image):
-    return send_from_directory("00/" + "/".join(a + b for a, b in zip(image[:-2][::2], image[:-2][1::2])) + "/", image + ".jpg")
+    return send_file(image)
 
 def crop(k, dir, im, x, y, sx, sy):
     if (k == 0):
